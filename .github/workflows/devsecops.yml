@@ -22,7 +22,7 @@ jobs:
           node-version: 20
 
       # =========================
-      # 5.5 Create .env files (CI)
+      # 3. Create .env files (CI)
       # =========================
       - name: Create env files for Docker Compose
         run: |
@@ -44,8 +44,27 @@ jobs:
           # Frontend (build/test time)
           cp frontend/.env.example frontend/.env
           echo "VITE_API_URL=http://api-gateway:3000" >> frontend/.env
+
+      # ========================================
+      # 4. Install & Lint (Calidad de Código)
+      # ========================================
+      - name: Install & Lint Backend services
+        run: |
+          for service in backend/users-service backend/academic-service backend/api-gateway; do
+            echo "Linting $service..."
+            cd $GITHUB_WORKSPACE/$service
+            npm ci
+            npm run lint || echo "No lint script found or failed"
+          done
+
+      - name: Install & Lint Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run lint
+
       # =========================
-      # 3. Install & Test Backend
+      # 5. Install & Test Backend
       # =========================
       - name: Install & Test users-service
         run: |
@@ -66,7 +85,7 @@ jobs:
           npm test
 
       # =========================
-      # 4. Install & Test Frontend
+      # 6. Install & Test Frontend
       # =========================
       - name: Install & Test frontend
         run: |
@@ -74,7 +93,7 @@ jobs:
           npm ci
           npm test
       # =========================
-      # 5. SAST – Semgrep
+      # 7. SAST – Semgrep
       # =========================
       - name: Install Semgrep
         run: |
@@ -101,7 +120,7 @@ jobs:
           ls -la frontend
 
       # =========================
-      # 6. Docker Build
+      # 8. Docker Build
       # =========================
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -111,7 +130,7 @@ jobs:
           docker compose -f backend/docker-compose.yml build
 
       # =========================
-      # 7. SCA – Trivy
+      # 9. SCA – Trivy
       # =========================
       - name: Trivy scan users-service
         uses: aquasecurity/trivy-action@0.20.0
@@ -135,7 +154,7 @@ jobs:
           exit-code: 1
 
       # =========================
-      # 8. Smoke test
+      # 10. Smoke test
       # =========================
       - name: Run docker-compose
         run: |
